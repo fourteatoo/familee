@@ -1,0 +1,6 @@
+;;; Some sane defaults that let the program run without a
+;;; configuration file.
+
+{:monitor-interval 5                    ; minutes
+ :cookies-ttl 10                        ; seconds
+ }
