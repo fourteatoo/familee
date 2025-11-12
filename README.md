@@ -93,7 +93,8 @@ The EDN file saved by the program has the following structure:
 
 The `:limit` is the only thing that can be edited (and uploaded).
 Things like the user `:name` and application `:title` are there only
-for your convenience.
+for your convenience.  And no, I don't know the difference between 0
+minutes a day and `:blocked`.
 
 You don't need to keep track of all your apps; you can upload just a
 subset.  The rest will be left untouched.
