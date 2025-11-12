@@ -1,0 +1,114 @@
+# familee
+
+Read, save and restore Google Family Link restrictions.
+
+Provided you use Firefox, this program can access your Google Family
+Link configuration and modify it, if necessary.  Currently it can only
+change the app permissions, which is all I personally need.
+
+It takes inspiration from a smiliar Python project
+<https://github.com/tducret/familylink>.
+
+
+## Installation
+
+    $ lein uberjar
+
+## Usage
+
+    $ java -jar target/familee-<version>-standalone.jar -h
+	
+will get you an usage string.  It is straightforward.
+
+    $ java -jar target/familee-<version>-standalone.jar -s file.edn
+	
+dumps in `file.edn` your current app restrictions, for each supervised
+user in your family nucleus.
+
+You can then edit `file.edn` and apply the changes with
+
+    $ java -jar target/familee-<version>-standalone.jar -r file.edn
+
+
+## Options
+
+  -s, --save FILE       download current app restrictions status and save it into FILE
+  -r, --restore FILE    restore app restrictions if different from FILE
+  -d, --diff FILE       compare current restrictions with those in FILE
+  -p, --print           print family and apps state
+  -n, --dry-run         do not apply changes, just print them
+  -v, --verbose         increase logging verbosity
+  -h, --help            display program usage
+
+
+## Examples
+
+The EDN file saved by the program has the following structure:
+
+```clojure
+;; user id
+{"12345678901234567890"
+ {:name "Junior",                       ; user name
+  ;; list of restricted applications
+  :apps
+  {"com.google.android.youtube"
+   ;; Youtube for 20 minutes a day
+   {:title "YouTube", :limit 20},
+   "com.zeptolab.ctr.ads"
+   ;; 15 minutes a day
+   {:title "Cut the Rope", :limit 15},
+   "com.mobisystems.office"
+   {:title "MobiOffice: Word, Sheets, PDF", :limit :allowed},
+   "com.gameloft.android.GloftDMKF"
+   ;; not allowed at all, ever
+   {:title "Disney M. K.", :limit :blocked},
+   "com.duolingo"
+   ;; unlimited use 24/7 regardless the daily screen time
+   {:title "Duolinguo: Language Lessons", :limit :unlimited},
+   "com.makewonder.wonder"
+   {:title "Wonder for Dash & Dot Robots", :limit :allowed},
+   "org.fdroid.fdroid"
+   ;; zero minutes a day
+   {:title "F-Droid", :limit 0},
+   ;; allowed for as long as the daily screen time
+   "com.google.android.apps.photos"
+   {:title "Google Photos", :limit :allowed},
+...
+```
+
+The `:limit` is the only thing that can be edited (and uploaded).
+Things like the user `:name` and application `:title` are there only
+for your convenience.
+
+You don't need to keep track of all your apps; you can upload just a
+subset.  The rest will be left untouched.
+
+The following changes just the YouTube app, limiting it to 10 minutes
+a day:
+
+```clojure
+{"12345678901234567890" {:apps {"com.google.android.youtube" {:limit 10}}}}
+```
+
+all the other apps will not be affected.
+
+
+### Bugs
+
+Expected.
+
+
+## License
+
+Copyright © 2025 Walter C. Pelissero
+
+This program and the accompanying materials are made available under the
+terms of the Eclipse Public License 2.0 which is available at
+http://www.eclipse.org/legal/epl-2.0.
+
+This Source Code may also be made available under the following Secondary
+Licenses when the conditions for such availability set forth in the Eclipse
+Public License, v. 2.0 are satisfied: GNU General Public License as published by
+the Free Software Foundation, either version 2 of the License, or (at your
+option) any later version, with the GNU Classpath Exception which is available
+at https://www.gnu.org/software/classpath/license.html.
