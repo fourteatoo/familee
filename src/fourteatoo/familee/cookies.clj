@@ -1,7 +1,5 @@
 (ns fourteatoo.familee.cookies
   (:require
-   [camel-snake-kebab.core :as csk]
-   [cheshire.core :as json]
    [clj-http.cookies :as cookies]
    [clojure-ini.core :as ini]
    [clojure.java.io :as io]
@@ -9,7 +7,8 @@
    [clojure.string :as s]
    [java-time.api :as jt]
    [next.jdbc :as jdbc]
-   [fourteatoo.familee.conf :as conf]))
+   [fourteatoo.familee.conf :as conf]
+   [fourteatoo.familee.jsonlz4]))
 
 (defn- slurp-firefox-cookies [filename & [host]]
   (let [ds (jdbc/get-datasource {:jdbcUrl (str "jdbc:sqlite:file:" filename
@@ -19,7 +18,8 @@
          (map #(assoc % :comment (str "source " filename))))))
 
 (comment
-  (count (slurp-firefox-cookies (cookies-db-file) "%.google.com")))
+  (count (slurp-firefox-cookies (cookies-db-file) "%.google.com"))
+  (count (slurp-firefox-cookies (cookies-db-file))))
 
 (defn- fix-cookie-domain [cookie]
   (when (s/starts-with? (.getDomain cookie) ".")
@@ -41,14 +41,6 @@
           (:expiry firefox-cookie)
           (assoc :expires (jt/java-date (:expiry firefox-cookie))))])
       fix-cookie-domain))
-
-(defn- decompress-jsonlz4 [file]
-  (-> (sh/sh "lz4jsoncat" (str file))
-      :out
-      (json/parse-string csk/->kebab-case-keyword)))
-
-(comment
-  (System/getProperties))
 
 (defn- firefox-directory []
   (io/file (System/getProperty "user.home") ".mozilla" "firefox"))
