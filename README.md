@@ -29,6 +29,21 @@ You can then edit `file.edn` and apply the changes with
 
     $ java -jar target/familee-<version>-standalone.jar -r file.edn
 
+You can also visualize the differences between your stored
+configuration and the one active in the cloud
+
+    $ java -jar target/familee-<version>-standalone.jar -d file.edn
+
+which will result in something like:
+
+```
+User Junior
+
+|                      :title |                       :package |    :active |  :stored |
+|-----------------------------+--------------------------------+------------+----------|
+| Spotify: Music and Podcasts |              com.spotify.music | :unlimited | :allowed |
+|               Google Photos | com.google.android.apps.photos |   :allowed |       10 |
+```
 
 ## Options
 
