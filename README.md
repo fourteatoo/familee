@@ -1,3 +1,8 @@
+[![Clojars Project](https://img.shields.io/clojars/v/io.github.fourteatoo/familee.svg?include_prereleases)](https://clojars.org/io.github.fourteatoo/familee)
+[![cljdoc badge](https://cljdoc.org/badge/io.github.fourteatoo/familee)](https://cljdoc.org/d/io.github.fourteatoo/familee)
+[![CircleCI](https://dl.circleci.com/status-badge/img/gh/fourteatoo/familee/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/fourteatoo/familee/tree/main)
+[![Coverage Status](https://coveralls.io/repos/github/fourteatoo/familee/badge.svg)](https://coveralls.io/github/fourteatoo/familee)
+
 # familee
 
 Read, save and restore Google Family Link restrictions.
