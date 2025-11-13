@@ -239,7 +239,7 @@ to get the apps restrictions
 (fam/get-apps-usage "your kid's user id")
 ```
 
-You need the ID, not the name.  You fiund the user id in the maps
+You need the ID, not the name.  You find the user id in the maps
 returned by `fam/get-family-members` or `fam/get-supervised-members`.
 
 For instance, for all of your kids you would
