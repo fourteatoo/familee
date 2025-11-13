@@ -50,9 +50,7 @@
 (defn- get-apps-usage []
   (->> (api/get-supervised-members)
        (map (fn [user]
-              (-> (select-keys user [:user-id])
-                  (assoc :name (get-in user [:profile :display-name]))
-                  (assoc :apps (:apps (api/get-apps-usage (:user-id user)))))))
+              (assoc user :apps (:apps (api/get-apps-usage (:user-id user))))))
        (index-by :user-id)))
 
 (defn- app-state->restriction [app]
@@ -62,19 +60,18 @@
 (defn- fetch-restrictions-summary []
   (->> (get-apps-usage)
        (map (fn [[user-id config]]
-              [user-id (update config :apps
-                               (fn [apps]
-                                 (->> apps
-                                      (map app-state->restriction)
-                                      (index-by :package-name))))]))
+              [user-id (-> (select-keys config [:apps])
+                           (assoc :name (get-in config [:profile :display-name]))
+                           (update :apps
+                                   (fn [apps]
+                                     (->> apps
+                                          (map app-state->restriction)
+                                          (index-by :package-name)))))]))
        (into {})))
 
 (defn- save-restrictions [file]
   (with-open [out (io/writer (io/file file))]
     (pp/pprint (fetch-restrictions-summary) out)))
-
-(comment
-  (save-restrictions "/home/wcp/tmp/restrictions.edn"))
 
 (defn- upload-restrictions [family]
   (->> family
