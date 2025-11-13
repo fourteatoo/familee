@@ -198,6 +198,80 @@ $ java -jar target/uberjar/familee-0.1.0-SNAPSHOT-standalone.jar -p
 which dumps on your screen a lot of info for your own curiosity.
 
 
+## The Library
+
+The jar can be used as a library and included in your own project.
+All the authentication aspects are handled automatically for you.
+Consider, though, that the code looks for your access tokens in your
+default Firefox cookies.  At the moment no other browser is supported.
+
+
+With Leiningen:
+
+```clojure
+[io.github.fourteatoo/familee "LATEST"]
+```
+
+The namaspace you want to use is
+
+```clojure
+(require '[fourteatoo.familee.api :as familee])
+```
+
+To see your family composition you just
+
+```clojure
+(fam/get-family-members)
+```
+
+to see the supervised members only
+
+```clojure
+(fam/get-supervised-members)
+````
+
+to get the apps restrictions
+
+```clojure
+(fam/get-apps-usage "your kid's user id")
+```
+
+You need the ID, not the name.  You fiund the user id in the maps
+returned by `fam/get-family-members` or `fam/get-supervised-members`.
+
+For instance, for all of your kids you would
+
+```clojure
+(map (comp fam/get-apps-usage :user-id)
+     (fam/get-supervised-members))
+```
+
+to change an application limit
+
+```clojure
+(fam/update-restrictions user-id package limit)
+```
+
+You find the `user-id` inside the map returned by
+`fam/get-supervised-members`.  The `package` can be found in the maps
+returned by `fam/get-apps-usage`.  The limit can be any of:
+`:allowed`, `:unlimited`, `:blocked` or an integer which is the time
+in minutes.
+
+Examples:
+
+```clojure
+;; limit Spotify by the daily screen time
+(fam/update-restrictions "87238265899123764" "com.spotify.music" :allowed)
+;; allow the calculator any time of the day
+(fam/update-restrictions "48723826589912376" "com.google.android.calculator" :unlimited)
+;; limit YouTube
+(fam/update-restrictions "64872382658991237" "com.google.android.youtube" 15)
+;; block TikTok
+(fam/update-restrictions "64872382658991237" "com.zhiliaoapp.musically" :blocked)
+```
+
+
 ### Bugs
 
 Expected.
