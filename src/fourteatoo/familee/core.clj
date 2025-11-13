@@ -145,6 +145,8 @@
               (restore-restrictions (:restore options))
               (:diff options)
               (diff-restrictions (:diff options))
+              (:print options)
+              (print-family-configuration)
               :else
               (usage summary nil)))
       (mount/stop)
