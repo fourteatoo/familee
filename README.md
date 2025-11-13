@@ -125,6 +125,9 @@ option.
 
 ```
 $ java -jar target/uberjar/familee-0.1.0-SNAPSHOT-standalone.jar -p
+```
+=>
+```clojure
 {"12345678901234567890"
  {:role "member",
   :profile
