@@ -12,11 +12,17 @@ It takes inspiration from a smiliar Python project
 
 ## Installation
 
+Compile
+
     $ lein uberjar
+
+then copy the jar file somewhere you can find again
+
+    $ cp target/uberjar/familee-<version>-standalone.jar some/where/else
 
 ## Usage
 
-    $ java -jar target/familee-<version>-standalone.jar -h
+    $ java -jar target/uberjar/familee-<version>-standalone.jar -h
 	
 will get you an usage string.  It is straightforward.
 
@@ -107,6 +113,84 @@ a day:
 ```
 
 all the other apps will not be affected.
+
+
+If you wish you can peek inside the raw configuration with the `-p`
+option.
+
+```
+$ java -jar target/uberjar/familee-0.1.0-SNAPSHOT-standalone.jar -p
+{"12345678901234567890"
+ {:role "member",
+  :profile
+  {:display-name "Junior",
+   :profile-image-url
+   "https://lh3.googleusercontent.com/a-/SOMESTUFFHERE",
+   :email "junior@gmail.com",
+   :family-name "Smith",
+   :given-name "Junior",
+   :standard-gender "male",
+   :birthday {:day 4, :month 2, :year 2020},
+   :default-profile-image-url
+   "https://lh3.googleusercontent.com/a/default-user"},
+  :state "regular",
+  :member-supervision-info
+  {:is-supervised-member true, :is-guardian-linked-account false},
+  :member-attributes
+  {:has-griffin-policy true,
+   :remove-from-family-after-opt-out-supervision true,
+   :show-parental-password-reset true},
+  :ui-customizations
+  {:settings-group
+   ["tabletSettingGroup"
+    "playSettingGroup"
+    "websitePermissionSettingGroup"
+    "searchSettingGroup"
+    "youtubeParentToolsSettingGroup"
+    "a4kSettingGroup"
+    "appsSettingGroup"
+    "locationSettingGroup"
+    "nativeKidEditSettingGroup"
+    "googlePhotosSettingGroup"
+    "locationConsentSettingGroup"
+    "appActivitySettingGroup"
+    "googleActivitySettingGroup"
+    "unsupervisedSignInSettingGroup"
+    "thirdPartySettingGroup"
+    "resetScreenTimeLimitsGroup"
+    "privacySettingGroup"],
+   :privacy-policy-url "https://policies.google.com/privacy",
+   :supervised-user-type "account"},
+  :apps
+  [{:iap-support-status "iapSupported",
+    :supervision-setting
+    {:hidden false,
+     :hidden-set-explicitly true,
+     :always-allowed-app-info
+     {:always-allowed-state "alwaysAllowedStateEnabled"}},
+    :enforced-enabled-status "statusUnknown",
+    :supervision-capabilities
+    ["capabilityAlwaysAllowApp"
+     "capabilityBlock"
+     "capabilityUsageLimit"],
+    :app-source "googlePlay",
+    :icon-url
+    "https://lh3.googleusercontent.com/48wwD4kfFSStoxwuwCIu6RdM2IeZmZKfb1ZeQkga0qEf1JKsiD-hK3Qf8qvxHL09lQ",
+    :title "Amazon Kindle",
+    :install-time-millis "1733832804041",
+    :ad-support-status "adsSupported",
+    :device-ids ["blahblahblah"],
+    :package-name "com.amazon.kindle"}
+   {:iap-support-status "iapSupported",
+    :supervision-setting
+    {:hidden false,
+     :hidden-set-explicitly true,
+     :usage-limit {:daily-usage-limit-mins 15, :enabled true}},
+    :enforced-enabled-status "statusUnknown",
+...
+```
+
+which dumps on your screen a lot of info for your own curiosity.
 
 
 ### Bugs
