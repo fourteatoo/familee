@@ -19,8 +19,6 @@
    ["-d" "--diff FILE" "compare current restrictions with those in FILE"]
    ["-p" "--print" "print family and apps state"]
    ["-n" "--dry-run" "do not apply changes, just print them"]
-   ["-m" "--monitor FILE" "monitor app restriction restoring those that differ from FILE"]
-   ["-t" "--monitor-interval MINUTES" "time between checks"]
    #_["-c" "--config FILE" "confirguration file"
       :parse-fn #(io/file %)
       :validate [#(.exists %) "Configuration file does not exist"]]
@@ -136,22 +134,8 @@
                  (pp/print-table [:title :package :active :stored])))
           only-active)))
 
-(comment
-  (diff-restrictions "/home/wcp/tmp/restrictions.edn"))
-
-(def exit? (promise))
-
-(defn arm-exit-hooks []
-  (.addShutdownHook (Runtime/getRuntime)
-                    (Thread. (fn []
-                               (log/info "Shutting down")
-                               (deliver exit? true)))))
-
-(defn- start-monitor [file interval]
-  (loop []
-    (restore-restrictions file)
-    (Thread/sleep (* interval 60 1000))
-    (recur)))
+(defn print-family-configuration []
+  (pp/pprint (get-apps-usage)))
 
 (defn -main [& args]
   (let [{:keys [options summary]} (parse-cli args)]
@@ -162,10 +146,6 @@
               (save-restrictions (:save options))
               (:restore options)
               (restore-restrictions (:restore options))
-              (:monitor options)
-              (start-monitor (:monitor options)
-                             (or (:monitor-interval options)
-                                 (conf/conf :monitor-interval)))
               (:diff options)
               (diff-restrictions (:diff options))
               :else
