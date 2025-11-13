@@ -5,22 +5,32 @@
 
 (def api-base-url "https://kidsmanagement-pa.clients6.google.com/kidsmanagement/v1")
 
-(defn get-family-members []
+(defn get-family-members
+  "Query the family nucelus composition.  The JSON reply is returned
+  unchanged.  The members are under the `:members` key."
+  []
   (-> (http/http-get (str api-base-url "/families/mine/members"))
       :json))
 
-(defn get-supervised-members []
+(defn get-supervised-members
+  "Query the the family members unders supervision.  Return a list."
+  []
   (->> (get-family-members)
        :members
        (filter #(get-in % [:member-supervision-info :is-supervised-member]))))
 
-(defn get-apps-usage [account-id]
-  (-> (http/http-get (str api-base-url "/people/" account-id "/appsandusage")
+(defn get-apps-usage
+  "Query the app configurations for the user `user-id`."
+  [user-id]
+  (-> (http/http-get (str api-base-url "/people/" user-id "/appsandusage")
                      {:query-params {:capabilities ["CAPABILITY_APP_USAGE_SESSION"
                                                     "CAPABILITY_SUPERVISION_CAPABILITIES"]}})
       :json))
 
-(defn app-limit [app]
+(defn app-limit
+  "Given an app as returned by the `get-apps-usage`, return either:
+  `:allowed`, `:blocked`, `:unlimited` or the time in minutes."
+  [app]
   (cond (get-in app [:supervision-setting :usage-limit :enabled])
         ;; limit in minutes
         (get-in app [:supervision-setting :usage-limit :daily-usage-limit-mins])
@@ -59,28 +69,13 @@
       [nil [limit 1]])))
 
 (defn update-restrictions
-  "Limit can be `:block`, `:allow`, or number of minutes."
-  [account-id package limit]
-  (let [body [account-id [(apply vector [package] (limit-to-update limit))]]]
-    (-> (http/http-post (str api-base-url "/people/" account-id "/apps:updateRestrictions")
+  "Update the app identified by `package` for the user `user-id` to
+  `limit`.  `limit` can be either: `:blocked`, `:allowed`,
+  `:unlimited`, or an integer value which is interpreted as time in
+  minutes."
+  [user-id package limit]
+  (let [body [user-id [(apply vector [package] (limit-to-update limit))]]]
+    (-> (http/http-post (str api-base-url "/people/" user-id "/apps:updateRestrictions")
                         {:body (json/generate-string body)
                          :headers {:content-type "application/json+protobuf"}})
         :json)))
-
-(comment
-  (let [pkg "com.google.android.youtube"
-        account-id "112679673099751393232"
-        body [account-id [[[pkg] nil nil]]]]
-    (binding [http/*debug-http* true]
-      (-> (http/http-post (str api-base-url "/people/" account-id "/apps:updateRestrictions")
-                          {:body (json/generate-string body)
-                           :headers {:content-type "application/json+protobuf"}})
-          :json))))
-
-(comment
-  (:members (get-family-members))
-  (def account-id "112679673099751393232")
-  (def restrictions (:apps (get-apps-usage account-id)))
-  (update-restrictions account-id
-                       "com.google.android.youtube"
-                       :unrestricted))
