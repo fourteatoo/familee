@@ -3,12 +3,11 @@
    [clj-http.cookies :as cookies]
    [clojure-ini.core :as ini]
    [clojure.java.io :as io]
-   [clojure.java.shell :as sh]
    [clojure.string :as s]
-   [java-time.api :as jt]
-   [next.jdbc :as jdbc]
    [fourteatoo.familee.conf :as conf]
-   [fourteatoo.familee.jsonlz4]))
+   [fourteatoo.familee.jsonlz4 :as jsonlz4]
+   [java-time.api :as jt]
+   [next.jdbc :as jdbc]))
 
 (defn- slurp-firefox-cookies [filename & [host]]
   (let [ds (jdbc/get-datasource {:jdbcUrl (str "jdbc:sqlite:file:" filename
@@ -67,7 +66,7 @@
   (get-user-profile-directory))
 
 (defn- slurp-firefox-session-cookies [file]
-  (->> (decompress-jsonlz4 file)
+  (->> (jsonlz4/decompress-jsonlz4 file)
        :cookies
        (map #(assoc % :comment (str "source " file)))))
 
