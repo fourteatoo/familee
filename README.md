@@ -218,7 +218,7 @@ With Leiningen:
 The namaspace you want to use is
 
 ```clojure
-(require '[fourteatoo.familee.api :as familee])
+(require '[fourteatoo.familee.api :as fam])
 ```
 
 To see your family composition you just
