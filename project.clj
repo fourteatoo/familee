@@ -28,4 +28,8 @@
   :main ^:skip-aot fourteatoo.familee.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all
-                       :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}})
+                       :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}
+             :dev {:plugins [[lein-codox "0.10.8"]
+                             [lein-cloverage "1.2.4"]]
+                   :resource-paths ["dev-resources" "resources"]}}
+  :lein-release {:deploy-via :clojars})
