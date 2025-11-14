@@ -17,10 +17,6 @@
                         jdbc/unqualified-snake-kebab-opts)
          (map #(assoc % :comment (str "source " filename))))))
 
-(comment
-  (count (slurp-firefox-cookies (cookies-db-file) "%.google.com"))
-  (count (slurp-firefox-cookies (cookies-db-file))))
-
 (defn- fix-cookie-domain [cookie]
   (when (s/starts-with? (.getDomain cookie) ".")
     (.setAttribute cookie org.apache.http.cookie.ClientCookie/DOMAIN_ATTR "true"))
@@ -65,9 +61,6 @@
 (defn- cookies-db-file []
   (io/file (get-user-profile-directory) "cookies.sqlite"))
 
-(comment
-  (get-user-profile-directory))
-
 (defn- slurp-firefox-session-cookies [file]
   (->> (jsonlz4/decompress-jsonlz4 file)
        :cookies
@@ -92,9 +85,10 @@
     (->> (slurp-firefox-cookies (cookies-db-file) "%google.com")
          (map firefox->cookie)
          (fill-cookie-jar jar))
-    (->> (slurp-firefox-session-cookies (io/file (get-user-profile-directory)
-                                                 "sessionstore-backups"
-                                                 "recovery.jsonlz4"))
+    (->> (slurp-firefox-session-cookies
+          (io/file (get-user-profile-directory)
+                   "sessionstore-backups"
+                   "recovery.jsonlz4"))
          (filter (fn [c]
                      (re-matches #"\.google\.com$" (:host c))))
          (map firefox-session->cookie)
@@ -109,7 +103,7 @@
     (let [{:keys [jar epoch]} @cache
           now (jt/instant)]
       (when (or (not epoch)
-                (jt/before? (jt/plus epoch (jt/seconds (or (conf/conf :cookies-ttl)
+                (jt/before? (jt/plus epoch (jt/seconds (or (c/conf :cookies-ttl)
                                                            default-cookies-ttl)))
                             now))
         (reset! cache {:jar (steal-browser-cookies jar)
@@ -121,9 +115,6 @@
        (map cookies/to-cookie)
        (map (fn [[k v]]
               (assoc v :name k)))))
-
-(comment
-  (count (get-cookies (cookie-jar))))
 
 (defn- get-cookie [jar name domain]
   (->> (get-cookies jar)
