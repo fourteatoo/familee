@@ -4,10 +4,11 @@
    [clojure-ini.core :as ini]
    [clojure.java.io :as io]
    [clojure.string :as s]
-   [fourteatoo.familee.conf :as conf]
+   [fourteatoo.familee.conf :as c]
    [fourteatoo.familee.jsonlz4 :as jsonlz4]
    [java-time.api :as jt]
    [next.jdbc :as jdbc]))
+
 
 (defn- slurp-firefox-cookies [filename & [host]]
   (let [ds (jdbc/get-datasource {:jdbcUrl (str "jdbc:sqlite:file:" filename
@@ -42,10 +43,12 @@
       fix-cookie-domain))
 
 (defn- firefox-directory []
-  (io/file (System/getProperty "user.home") ".mozilla" "firefox"))
+  (if (c/conf :firefox-directory)
+    (io/file (c/conf :firefox-directory))
+    (io/file (System/getProperty "user.home") ".mozilla" "firefox")))
 
 (defn- profiles-file []
-  (io/file (System/getProperty "user.home") ".mozilla" "firefox" "profiles.ini"))
+  (io/file (firefox-directory) "profiles.ini"))
 
 (defn- read-profiles-ini []
   (ini/read-ini (profiles-file)))
