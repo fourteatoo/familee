@@ -143,7 +143,10 @@ a day:
 all the other apps will not be affected.
 
 
-Limits can be temporary set.  Example:
+
+### Temporary restrictions
+
+Limits can be imposed temporarily.  For example:
 
 ```clojure
 ;; user id
@@ -155,11 +158,13 @@ Limits can be temporary set.  Example:
    {:title "YouTube", :limit 20 :temporary {:limit 60 :until "2025-07-31"}},
 ```
 
-YouTube is normally limited to 20 minutes a day but, for the time
-being, one hour a day until the end of the holidays.  In August the
-usual 20 minutes a day will be applied.  The Family Link service
-doesn't provide this feature.  The program has to run repeatedly for
-this to work as expected.  See the `-m` option.
+In the snipped above, YouTube is normally limited to 20 minutes a day
+but, for the time being, one hour a day until the end of the summer
+holidays.  In August the usual 20 minutes a day will be applied.  The
+Family Link service doesn't provide this feature.  The program has to
+run in monitor mode for this to work as expected.  See the `-m`
+option.
+
 
 ## Misc
 
