@@ -63,11 +63,34 @@ User Junior
   -d, --diff FILE       compare current restrictions with those in FILE
   -p, --print           print family and apps state
   -n, --dry-run         do not apply changes, just print them
+  -m, --monitor FILE    keep enforcing the restrictions"]
+  -c, --config FILE     confirguration file
   -v, --verbose         increase logging verbosity
   -h, --help            display program usage
 
 
-## Examples
+## Configuration
+
+There are a couple of tunable you can tweak in the `~/.familee`
+configuration file.  An example:
+
+```clojure
+{:monitor-interval 5
+ :cookies-ttl 10
+ :logging {:level "info" :console true}}
+```
+
+These are the defaults; the file doesn't even need to exist.  The
+`:monitor-interval` is for the `-m` command line option; it tells how
+long (in minutes) to wait between updates.  The `:cookies-ttl` is how
+long (in seconds) the cookies are to be considered valid before
+reading them again from disc.  The `:logging` part is to configure the
+logger.  Again, for the monitor option.  By default the minimum level
+is `INFO` and the output is on the console.  Have a look at
+https://github.com/pyr/unilog for more information.
+
+
+## Restrictions File
 
 The EDN file saved by the program has the following structure:
 
@@ -119,6 +142,26 @@ a day:
 
 all the other apps will not be affected.
 
+
+Limits can be temporary set.  Example:
+
+```clojure
+;; user id
+{"12345678901234567890"
+ {:name "Junior",                       ; user name
+  :apps
+  {"com.google.android.youtube"
+   ;; Youtube for 20 minutes a day
+   {:title "YouTube", :limit 20 :temporary {:limit 60 :until "2025-07-31"}},
+```
+
+YouTube is normally limited to 20 minutes a day but, for the time
+being, one hour a day until the end of the holidays.  In August the
+usual 20 minutes a day will be applied.  The Family Link service
+doesn't provide this feature.  The program has to run repeatedly for
+this to work as expected.  See the `-m` option.
+
+## Misc
 
 If you wish you can peek inside the raw configuration with the `-p`
 option.
