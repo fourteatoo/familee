@@ -38,7 +38,7 @@
       (cprop/load-config))))
 
 (mount/defstate config
-  :start (load-configuration (opt :config)))
+  :start (load-configuration (:config opt)))
 
 (defn conf [& path]
   (get-in config path))
