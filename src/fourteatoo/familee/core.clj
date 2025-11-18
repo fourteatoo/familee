@@ -8,7 +8,7 @@
    [mount.core :as mount]
    [clojure.pprint :as pp]
    [clojure.java.io :as io]
-   [fourteatoo.familee.conf :as conf]
+   [fourteatoo.familee.conf :refer [opt conf] :as conf]
    [clojure.edn :as edn]
    [fourteatoo.familee.log :as log])
   (:import [java.io PushbackReader]))
@@ -19,9 +19,10 @@
    ["-d" "--diff FILE" "compare current restrictions with those in FILE"]
    ["-p" "--print" "print family and apps state"]
    ["-n" "--dry-run" "do not apply changes, just print them"]
-   #_["-c" "--config FILE" "confirguration file"
-      :parse-fn #(io/file %)
-      :validate [#(.exists %) "Configuration file does not exist"]]
+   ["-m" "--monitor FILE" "keep enforcing the restrictions"]
+   ["-c" "--config FILE" "confirguration file"
+    :parse-fn #(io/file %)
+    :validate [#(.exists %) "Configuration file does not exist"]]
    ["-v" "--verbose" "increase logging verbosity"
     :default 0
     :update-fn inc]
@@ -104,15 +105,31 @@
   (let [[a b _] (diff (strip-ancillary-info r1) (strip-ancillary-info r2))]
     [a b]))
 
+(defn- apply-temporary-restrictions [family]
+  (->> family
+       (map (fn [[uid user]]
+              [uid (->> (:apps user)
+                        (map (fn [[pkg-id restrictions]]
+                               [pkg-id (let [{:keys [until limit]} (:temporary restrictions)]
+                                         (dissoc (if (and until
+                                                          (not (jt/after? (jt/local-date)
+                                                                          (jt/local-date until))))
+                                                   (assoc restrictions :limit limit)
+                                                   restrictions)
+                                                 :temporary))]))
+                        (into {}))]))
+       (into {})))
+
 (defn- restore-restrictions [file]
   (let [current (fetch-restrictions-summary)
-        desired (load-restrictions-summary-from-file file)
+        desired (apply-temporary-restrictions
+                 (load-restrictions-summary-from-file file))
         [_ delta] (diff-family-restrictions current desired)]
-    (when (or (conf/opt :dry-run)
-              (> (conf/opt :verbose) 0))
+    (when (or (opt :dry-run)
+              (> (opt :verbose) 0))
       (println "Delta to apply:")
       (pp/pprint delta))
-    (when-not (conf/opt :dry-run)
+    (when-not (opt :dry-run)
       (upload-restrictions delta))))
 
 (defn- diff-restrictions [file]
@@ -131,8 +148,22 @@
                  (pp/print-table [:title :package :active :stored])))
           only-active)))
 
-(defn print-family-configuration []
+(defn- print-family-configuration []
   (pp/pprint (get-apps-usage)))
+
+(defn- sleep [secs]
+  (Thread/sleep (* secs 1000)))
+
+(defn- start-monitor [file]
+  (log/info "starting monitor of" (str file))
+  (loop []
+    (log/debug "restore-restrictions")
+    (try
+      (restore-restrictions file)
+      (catch Exception e
+        (log/error e "cannot restore restrictions")))
+    (sleep (* 60 (conf :monitor-interval)))
+    (recur)))
 
 (defn -main [& args]
   (let [{:keys [options summary]} (parse-cli args)]
@@ -141,12 +172,19 @@
       (clj-http.client/with-connection-pool {}
         (cond (:save options)
               (save-restrictions (:save options))
+
               (:restore options)
               (restore-restrictions (:restore options))
+
+              (:monitor options)
+              (start-monitor (:monitor options))
+
               (:diff options)
               (diff-restrictions (:diff options))
+
               (:print options)
               (print-family-configuration)
+
               :else
               (usage summary nil)))
       (mount/stop)
