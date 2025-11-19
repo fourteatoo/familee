@@ -37,6 +37,11 @@
                      {:query-params {:capabilities ["TIME_LIMIT_CLIENT_CAPABILITY_SCHOOLTIME"]}})
       :json))
 
+(defn google-service-settings [user-id]
+  (-> (http/http-get (str (api-base-url) "/people/" user-id "/googleServiceSettings")
+                     {:query-params {"readMask.settingsTypes" "APP_ACTIVITY_SETTINGS"}})
+      :json))
+
 (defn get-time-limit [user-id]
   (-> (http/http-get (str (api-base-url) "/people/" user-id "/timeLimit")
                      {:query-params {:capabilities ["TIME_LIMIT_CLIENT_CAPABILITY_SCHOOLTIME"]}})
