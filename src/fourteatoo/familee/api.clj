@@ -1,15 +1,20 @@
 (ns fourteatoo.familee.api
   (:require [fourteatoo.familee.http :as http]
+            [fourteatoo.familee.conf :refer [conf]]
             [cheshire.core :as json]
             [mount.core :as mount]))
 
-(def api-base-url "https://kidsmanagement-pa.clients6.google.com/kidsmanagement/v1")
+
+(defn- api-base-url []
+  (str (or (conf :kids-management-host)
+           "https://kidsmanagement-pa.clients6.google.com")
+       "/kidsmanagement/v1"))
 
 (defn get-family-members
   "Query the family nucelus composition.  The JSON reply is returned
   unchanged.  The members are under the `:members` key."
   []
-  (-> (http/http-get (str api-base-url "/families/mine/members"))
+  (-> (http/http-get (str (api-base-url) "/families/mine/members"))
       :json))
 
 (defn get-supervised-members
@@ -22,7 +27,7 @@
 (defn get-apps-usage
   "Query the app configurations for the user `user-id`."
   [user-id]
-  (-> (http/http-get (str api-base-url "/people/" user-id "/appsandusage")
+  (-> (http/http-get (str (api-base-url) "/people/" user-id "/appsandusage")
                      {:query-params {:capabilities ["CAPABILITY_APP_USAGE_SESSION"
                                                     "CAPABILITY_SUPERVISION_CAPABILITIES"]}})
       :json))
@@ -75,7 +80,7 @@
   minutes."
   [user-id package limit]
   (let [body [user-id [(apply vector [package] (limit-to-update limit))]]]
-    (-> (http/http-post (str api-base-url "/people/" user-id "/apps:updateRestrictions")
+    (-> (http/http-post (str (api-base-url) "/people/" user-id "/apps:updateRestrictions")
                         {:body (json/generate-string body)
                          :headers {:content-type "application/json+protobuf"}})
         :json)))
