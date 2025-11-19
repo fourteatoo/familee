@@ -37,6 +37,11 @@
                      {:query-params {:capabilities ["TIME_LIMIT_CLIENT_CAPABILITY_SCHOOLTIME"]}})
       :json))
 
+(defn get-time-limit [user-id]
+  (-> (http/http-get (str (api-base-url) "/people/" user-id "/timeLimit")
+                     {:query-params {:capabilities ["TIME_LIMIT_CLIENT_CAPABILITY_SCHOOLTIME"]}})
+      :json))
+
 (defn app-limit
   "Given an app as returned by the `get-apps-usage`, return either:
   `:allowed`, `:blocked`, `:unlimited` or the time in minutes."
