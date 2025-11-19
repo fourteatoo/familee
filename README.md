@@ -251,10 +251,11 @@ which dumps on your screen a lot of info for your own curiosity.
 
 ## The Library
 
-The jar can be used as a library and included in your own project.
-All the authentication aspects are handled automatically for you.
-Consider, though, that the code looks for your access tokens in your
-default Firefox cookies.  At the moment no other browser is supported.
+The simple jar (non-standalone) can be used as a library and included
+in your own project.  All the authentication aspects are handled
+automatically for you.  Consider, though, that the code looks for your
+access tokens in your default Firefox cookies.  At the moment no other
+browser is supported.
 
 
 With Leiningen:
@@ -262,6 +263,7 @@ With Leiningen:
 ```clojure
 [io.github.fourteatoo/familee "LATEST"]
 ```
+Or whatever version you find on Clojars.
 
 The namaspace you want to use is
 
