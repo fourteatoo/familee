@@ -108,16 +108,18 @@
 (defn- apply-temporary-restrictions [family]
   (->> family
        (map (fn [[uid user]]
-              [uid (->> (:apps user)
-                        (map (fn [[pkg-id restrictions]]
-                               [pkg-id (let [{:keys [until limit]} (:temporary restrictions)]
-                                         (dissoc (if (and until
-                                                          (not (jt/after? (jt/local-date)
-                                                                          (jt/local-date until))))
-                                                   (assoc restrictions :limit limit)
-                                                   restrictions)
-                                                 :temporary))]))
-                        (into {}))]))
+              [uid (update user :apps
+                           (fn [apps]
+                             (->> apps
+                                  (map (fn [[pkg-id restrictions]]
+                                         [pkg-id (let [{:keys [until limit]} (:temporary restrictions)]
+                                                   (dissoc (if (and until
+                                                                    (not (jt/after? (jt/local-date)
+                                                                                    (jt/local-date until))))
+                                                             (assoc restrictions :limit limit)
+                                                             restrictions)
+                                                           :temporary))]))
+                                  (into {}))))]))
        (into {})))
 
 (defn- restore-restrictions [file]
