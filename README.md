@@ -89,6 +89,21 @@ logger.  Again, for the monitor option.  By default the minimum level
 is `INFO` and the output is on the console.  Have a look at
 https://github.com/pyr/unilog for more information.
 
+If, for instance, the program cannot figure out correctly your Firefox
+installation you may want to add
+
+```clojure
+  :firefox-directory "/home/you/mysandbox/.mozilla/firefox"
+  :firefox-profile-directory "hgjs4423u9.default-release-5"
+```
+
+The `:firefox-directory` should be an absolute pathname and it
+defaults to `$HOME/.mozilla/firefox`.  The
+`:firefox-profile-directory` has to be relative to the Firefox
+directory.  Type `about:profiles` in your Firefox URL to figure out
+which one is yours.
+
+
 
 ## Restrictions File
 

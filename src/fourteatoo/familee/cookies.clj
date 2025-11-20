@@ -49,13 +49,18 @@
 (defn- read-profiles-ini []
   (ini/read-ini (profiles-file)))
 
-(defn- get-user-profile-directory []
+(defn- user-profile-subdir []
   (->> (read-profiles-ini)
        (filter (fn [[section vars]]
                  (s/starts-with? section "Install")))
        (map val)
        (map #(get % "Default"))
        first
+       io/file))
+
+(defn- get-user-profile-directory []
+  (->> (or (c/conf :firefox-profile-directory)
+           (user-profile-subdir))
        (io/file (firefox-directory))))
 
 (defn- cookies-db-file []
