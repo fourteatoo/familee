@@ -136,7 +136,8 @@
 
 (defn- diff-restrictions [file]
   (let [active-restrictions (fetch-restrictions-summary)
-        stored-restrictions (load-restrictions-summary-from-file file)
+        stored-restrictions (apply-temporary-restrictions
+                             (load-restrictions-summary-from-file file))
         [only-active only-stored _] (diff-family-restrictions active-restrictions stored-restrictions)]
     (run! (fn [[user user-config]]
             (println "User" (get-in active-restrictions [user :name]))
