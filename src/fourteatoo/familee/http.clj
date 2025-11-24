@@ -37,8 +37,8 @@
                  %2)
               {:headers (make-headers (cookies/get-sapisid))
                :cookie-store (cookies/cookie-jar)
-               ;; :debug *debug-http*
-               ;; :save-request? *debug-http*
+               :debug *debug-http*
+               :save-request? *debug-http*
                :cookie-policy :standard}
               opts))
 
