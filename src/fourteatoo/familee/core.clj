@@ -9,9 +9,9 @@
    [clojure.pprint :as pp]
    [clojure.java.io :as io]
    [fourteatoo.familee.conf :refer [opt conf] :as conf]
+   [fourteatoo.familee.misc :as misc]
    [clojure.edn :as edn]
-   [fourteatoo.familee.log :as log])
-  (:import [java.io PushbackReader]))
+   [fourteatoo.familee.log :as log]))
 
 (def ^:private cli-options
   [["-s" "--save FILE" "download current app restrictions status and save it into FILE"]
@@ -43,16 +43,11 @@
       (usage summary errors))
     result))
 
-(defn- index-by [k l]
-  (->> l
-       (map (juxt k #(dissoc % k)))
-       (into {})))
-
 (defn- get-apps-usage []
   (->> (api/get-supervised-members)
        (map (fn [user]
               (assoc user :apps (:apps (api/get-apps-usage (:user-id user))))))
-       (index-by :user-id)))
+       (misc/index-by :user-id)))
 
 (defn- app-state->restriction [app]
   (-> (select-keys app [:title :package-name])
@@ -67,7 +62,7 @@
                                    (fn [apps]
                                      (->> apps
                                           (map app-state->restriction)
-                                          (index-by :package-name)))))]))
+                                          (misc/index-by :package-name)))))]))
        (into {})))
 
 (defn- save-restrictions [file]
@@ -82,11 +77,8 @@
                             (let [limit (:limit pkg-config)]
                               (api/update-restrictions user-id package limit)))))))))
 
-(defn- pushback-reader [file]
-  (PushbackReader. (io/reader (io/file file))))
-
 (defn load-restrictions-summary-from-file [file]
-  (with-open [in (pushback-reader file)]
+  (with-open [in (misc/pushback-reader file)]
     (edn/read in)))
 
 (defn- strip-ancillary-info [family-restrictions]
@@ -154,9 +146,6 @@
 (defn- print-family-configuration []
   (pp/pprint (get-apps-usage)))
 
-(defn- sleep [secs]
-  (Thread/sleep (* secs 1000)))
-
 (defn- start-monitor [file]
   (log/info "starting monitor of" (str file))
   (loop []
@@ -165,7 +154,7 @@
       (restore-restrictions file)
       (catch Exception e
         (log/error e "cannot restore restrictions")))
-    (sleep (* 60 (conf :monitor-interval)))
+    (misc/sleep (* 60 (conf :monitor-interval)))
     (recur)))
 
 (defn -main [& args]
