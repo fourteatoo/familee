@@ -58,6 +58,7 @@ User Junior
 
 ## Options
 
+```
   -s, --save FILE       download current app restrictions status and save it into FILE
   -r, --restore FILE    restore app restrictions if different from FILE
   -d, --diff FILE       compare current restrictions with those in FILE
@@ -67,6 +68,7 @@ User Junior
   -c, --config FILE     confirguration file
   -v, --verbose         increase logging verbosity
   -h, --help            display program usage
+```
 
 
 ## Configuration
