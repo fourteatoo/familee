@@ -73,7 +73,7 @@ User Junior
 
 ## Configuration
 
-There are a couple of tunable you can tweak in the `~/.familee`
+There are a couple of tunables you can tweak in the `~/.familee`
 configuration file.  An example:
 
 ```clojure
