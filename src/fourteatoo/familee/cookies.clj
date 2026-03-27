@@ -1,14 +1,39 @@
 (ns fourteatoo.familee.cookies
   (:require
-   [clj-http.cookies :as cookies]
    [clojure-ini.core :as ini]
    [clojure.java.io :as io]
    [clojure.string :as s]
+   [hato.client :as http]
    [fourteatoo.familee.conf :as c]
    [fourteatoo.familee.jsonlz4 :as jsonlz4]
-   [java-time.api :as jt]
-   [next.jdbc :as jdbc]))
+   [next.jdbc :as jdbc]
+   [fourteatoo.familee.misc :as misc]
+   [fourteatoo.familee.log :as log])
+  (:import [java.net CookieHandler CookieManager CookiePolicy CookieStore HttpCookie URI]))
 
+
+(defonce default-cookie-policy CookiePolicy/ACCEPT_ALL)
+
+(defn make-cookie-manager [& [store policy]]
+  (CookieManager. store
+                  (or policy default-cookie-policy)))
+
+(defn- get-cookie-store [cookie-manager]
+  (.getCookieStore cookie-manager))
+
+(defn- as-cookie-store [store-or-manager]
+  (if (instance? CookieStore store-or-manager)
+    store-or-manager
+    (get-cookie-store store-or-manager)))
+
+(defn- cookie-uri [cookie]
+  (let [domain (.getDomain cookie)]
+    (if domain
+      (URI. (str "https://" domain))
+      nil)))
+
+(defn add-cookie [store-or-manager cookie]
+  (.add (as-cookie-store store-or-manager) (cookie-uri cookie) cookie))
 
 (defn- slurp-firefox-cookies [filename & [host]]
   (let [ds (jdbc/get-datasource {:jdbcUrl (str "jdbc:sqlite:file:" filename
@@ -17,31 +42,27 @@
                         jdbc/unqualified-snake-kebab-opts)
          (map #(assoc % :comment (str "source " filename))))))
 
-(defn- fix-cookie-domain [cookie]
-  (when (s/starts-with? (.getDomain cookie) ".")
-    (.setAttribute cookie org.apache.http.cookie.ClientCookie/DOMAIN_ATTR "true"))
-  cookie)
-
-;; convert from the SQLite table row to clj-http cookie
+;; convert from the SQLite table row to java.net cookie
 (defn- firefox->cookie [firefox-cookie]
-  (-> (cookies/to-basic-client-cookie
-       [(:name firefox-cookie)
-        (cond-> (assoc (select-keys firefox-cookie [:value :path])
-                       :comment (or (:comment firefox-cookie)
-                                    "from Firefox SQLite DB")
-                       :discard false)
-          (:is-secure firefox-cookie)
-          (assoc :secure (= 1 (:is-secure firefox-cookie)))
-          (:host firefox-cookie)
-          (assoc :domain (:host firefox-cookie))
-          (:expiry firefox-cookie)
-          (assoc :expires (jt/java-date (:expiry firefox-cookie))))])
-      fix-cookie-domain))
+  (doto (HttpCookie. (:name firefox-cookie) (:value firefox-cookie))
+    (.setComment (:comment firefox-cookie))
+    (.setDomain (:host firefox-cookie))
+    (.setPath (or (:path firefox-cookie) "/"))
+    (.setSecure (= 1 (:is-secure firefox-cookie)))
+    (.setMaxAge
+     -1 #_(if (:expiry firefox-cookie)
+       (- (:expiry firefox-cookie)
+          (quot (System/currentTimeMillis) 1000))
+       -1))
+    (.setVersion 0)))
+
+(defn- user-home []
+  (System/getProperty "user.home"))
 
 (defn- firefox-directory []
   (if (c/conf :firefox-directory)
     (io/file (c/conf :firefox-directory))
-    (io/file (System/getProperty "user.home") ".mozilla" "firefox")))
+    (io/file (user-home) ".mozilla" "firefox")))
 
 (defn- profiles-file []
   (io/file (firefox-directory) "profiles.ini"))
@@ -58,13 +79,20 @@
        first
        io/file))
 
-(defn- get-user-profile-directory []
+(defn get-user-profile-directory []
   (->> (or (c/conf :firefox-profile-directory)
-           (user-profile-subdir))
-       (io/file (firefox-directory))))
+                     (user-profile-subdir))
+       (io/file (firefox-directory))
+       log/spy))
 
 (defn- cookies-db-file []
-  (io/file (get-user-profile-directory) "cookies.sqlite"))
+  (io/file (get-user-profile-directory)
+           "cookies.sqlite"))
+
+(defn- recovery-file []
+  (io/file (get-user-profile-directory)
+           "sessionstore-backups"
+           "recovery.jsonlz4"))
 
 (defn- slurp-firefox-session-cookies [file]
   (->> (jsonlz4/decompress-jsonlz4 file)
@@ -72,61 +100,49 @@
        (map #(assoc % :comment (str "source " file)))))
 
 (defn- firefox-session->cookie [session-cookie]
-  (-> (cookies/to-basic-client-cookie
-       [(:name session-cookie)
-        (assoc (select-keys session-cookie [:value :path :secure])
-               :comment (or (:comment session-cookie)
-                            "from Firefox session")
-               :discard false
-               :expires (jt/java-date (jt/plus (jt/zoned-date-time) (jt/years 2)))
-               :domain (:host session-cookie))])
-      fix-cookie-domain))
+  (doto (HttpCookie. (:name session-cookie) (:value session-cookie))
+    (.setComment (:comment session-cookie))
+    (.setDomain (:host session-cookie))
+    (.setPath (or (:path session-cookie) "/"))
+    (.setSecure (boolean (:secure session-cookie)))
+    (.setMaxAge -1)
+    (.setVersion 0)))
 
-(defn- fill-cookie-jar [jar cookies]
-  (run! (partial cookies/add-cookie jar) cookies))
+(defn- fill-cookie-store! [cookie-store cookies]
+  (run! (partial add-cookie cookie-store) cookies))
 
-(defn- steal-browser-cookies [& [jar]]
-  (let [jar (or jar (cookies/cookie-store))]
-    (->> (slurp-firefox-cookies (cookies-db-file) "%google.com")
-         (map firefox->cookie)
-         (fill-cookie-jar jar))
-    (->> (slurp-firefox-session-cookies
-          (io/file (get-user-profile-directory)
-                   "sessionstore-backups"
-                   "recovery.jsonlz4"))
-         (filter (fn [c]
-                     (re-matches #"\.google\.com$" (:host c))))
-         (map firefox-session->cookie)
-         (fill-cookie-jar jar))
-    jar))
 
-(def default-cookies-ttl 15)
 
-(let [cache (atom {:jar (cookies/cookie-store)
-                   :epoch nil})]
-  (defn cookie-jar []
-    (let [{:keys [jar epoch]} @cache
-          now (jt/instant)]
-      (when (or (not epoch)
-                (jt/before? (jt/plus epoch (jt/seconds (or (c/conf :cookies-ttl)
-                                                           default-cookies-ttl)))
-                            now))
-        (reset! cache {:jar (steal-browser-cookies jar)
-                       :epoch now}))
-      jar)))
+(defn steal-browser-cookies []
+  (concat
+   (->> (slurp-firefox-cookies (cookies-db-file) "%google.com")
+        (map firefox->cookie))
+   (->> (slurp-firefox-session-cookies (recovery-file))
+        (filter (fn [c]
+                  (re-matches #"\.google\.com$" (:host c))))
+        (map firefox-session->cookie))))
 
-(defn get-cookies [jar]
-  (->> (.getCookies jar)
-       (map cookies/to-cookie)
-       (map (fn [[k v]]
-              (assoc v :name k)))))
+(comment
+  (->> (steal-browser-cookies)
+       (map #(.hasExpired %))))
 
-(defn- get-cookie [jar name domain]
-  (->> (get-cookies jar)
+(def steal-browser-cookies-cached (misc/cached steal-browser-cookies 15))
+
+(defn refresh-cookies! [cookie-manager]
+  (->> (steal-browser-cookies-cached)
+       (fill-cookie-store! (.getCookieStore cookie-manager))))
+
+(defn get-cookies [cookie-manager-or-store]
+  (.getCookies (as-cookie-store cookie-manager-or-store)))
+
+(defn- get-cookie [store name domain]
+  (->> (get-cookies store)
        (filter (fn [c]
-                 (and (= name (:name c))
-                      (= domain (:domain c)))))
+                 (and (= name (.getName c))
+                      (= domain (.getDomain c)))))
        first))
 
-(defn get-sapisid []
-  (:value (get-cookie (cookie-jar) "SAPISID" ".google.com")))
+(defn get-sapisid [cookie-store]
+  (-> (as-cookie-store cookie-store)
+      (get-cookie "SAPISID" ".google.com")
+      .getValue))

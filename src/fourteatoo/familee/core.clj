@@ -11,7 +11,8 @@
    [fourteatoo.familee.conf :refer [opt conf] :as conf]
    [fourteatoo.familee.misc :as misc]
    [clojure.edn :as edn]
-   [fourteatoo.familee.log :as log]))
+   [fourteatoo.familee.log :as log]
+   [fourteatoo.familee.cookies :as cookies]))
 
 (def ^:private cli-options
   [["-s" "--save FILE" "download current app restrictions status and save it into FILE"]
@@ -144,9 +145,11 @@
           only-active)))
 
 (defn- print-family-configuration []
+  (println ";; User profile in" (str (cookies/get-user-profile-directory)))
   (pp/pprint (get-apps-usage)))
 
 (defn- start-monitor [file]
+  (log/info "user profile in" (str (cookies/get-user-profile-directory)))
   (log/info "starting monitor of" (str file))
   (loop []
     (log/debug "restore-restrictions")
@@ -161,24 +164,23 @@
   (let [{:keys [options summary]} (parse-cli args)]
     (binding [conf/options options]
       (mount/start)
-      (clj-http.client/with-connection-pool {}
-        (cond (:save options)
-              (save-restrictions (:save options))
+      (cond (:save options)
+            (save-restrictions (:save options))
 
-              (:restore options)
-              (restore-restrictions (:restore options))
+            (:restore options)
+            (restore-restrictions (:restore options))
 
-              (:monitor options)
-              (start-monitor (:monitor options))
+            (:monitor options)
+            (start-monitor (:monitor options))
 
-              (:diff options)
-              (diff-restrictions (:diff options))
+            (:diff options)
+            (diff-restrictions (:diff options))
 
-              (:print options)
-              (print-family-configuration)
+            (:print options)
+            (print-family-configuration)
 
-              :else
-              (usage summary nil)))
+            :else
+            (usage summary nil))
       (mount/stop)
       ;; don't wait for the hanging threads
       (System/exit 0))))

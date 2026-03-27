@@ -189,7 +189,7 @@
   (let [body [user-id [(apply vector [package] (app-limit-to-update limit))]]]
     (-> (http/http-post (str (api-base-url) "/people/" user-id "/apps:updateRestrictions")
                         {:body (json/generate-string body)
-                         :headers {:content-type "application/json+protobuf"}})
+                         :headers {"content-type" "application/json+protobuf"}})
         :json)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -198,7 +198,7 @@
   (-> (http/http-put (str (api-base-url) "/people/" user-id "/timeLimit:update")
                      {:body (json/generate-string body)
                       :debug true
-                      :headers {:content-type "application/json+protobuf"}})
+                      :headers {"content-type" "application/json+protobuf"}})
       :json))
 
 (def ^:private activation->int {:enable 2 :disable 1})
@@ -298,5 +298,5 @@
         body [nil user-id [[nil nil 8 device-id nil nil nil nil nil nil nil delta]] [1]]]
     (-> (http/http-post (str (api-base-url) "/people/" user-id "/timeLimitOverrides:batchCreate")
                         {:body (json/generate-string body)
-                         :headers {:content-type "application/json+protobuf"}})
+                         :headers {"content-type" "application/json+protobuf"}})
         :json)))

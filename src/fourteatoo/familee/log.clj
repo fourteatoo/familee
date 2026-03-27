@@ -13,6 +13,10 @@
 (mount/defstate logging-service
   :start (setup-logging (conf :logging)))
 
+;;
+;; as to avoid requiring two namespaces, we forward all the most
+;; common primitives
+
 (defmacro log [& args]
   `(log/log ~@args))
 
@@ -34,3 +38,5 @@
 (defmacro fatal [& args]
   `(log/fatal ~@args))
 
+(defmacro spy [& args]
+  `(log/spy ~@args))
