@@ -152,7 +152,7 @@
   (log/info "user profile in" (str (cookies/get-user-profile-directory)))
   (log/info "starting monitor of" (str file))
   (loop []
-    (log/debug "restore-restrictions")
+    (log/debug "polling restrictions")
     (try
       (restore-restrictions file)
       (catch Exception e

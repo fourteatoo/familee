@@ -28,4 +28,13 @@
              :dev {:plugins [[lein-codox "0.10.8"]
                              [lein-cloverage "1.2.4"]]
                    :resource-paths ["dev-resources" "resources"]}}
-  :lein-release {:deploy-via :clojars})
+  ;; don't deploy on Clojars; this is not a library!
+  :deploy-repositories ^:replace [["releases" :no-op] ["snapshots" :no-op]]
+  :release-tasks ^:replace [["vcs" "assert-committed"]
+                            ["change" "version" "leiningen.release/bump-version" "release"]
+                            ["vcs" "commit"]
+                            ["vcs" "tag" "v" "--no-sign"]
+                            ;; ["deploy"]
+                            ["change" "version" "leiningen.release/bump-version"]
+                            ["vcs" "commit"]
+                            ["vcs" "push"]])
